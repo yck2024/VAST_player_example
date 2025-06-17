@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple VAST Player</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #vast-url-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #load-vast-btn {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        #load-vast-btn:hover {
+            background-color: #0056b3;
+        }
+        #player-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 20px auto;
+            background-color: #000;
+        }
+        #ad-video-player {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        #log-container {
+            margin-top: 20px;
+        }
+        h2 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            font-size: 18px;
+        }
+        #log-output {
+            background-color: #2d2d2d;
+            color: #9f9;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Simple VAST Player</h1>
+        
+        <div class="input-group">
+            <input type="text" id="vast-url-input" placeholder="Enter VAST Tag XML URL here..." value="https://cors-anywhere.herokuapp.com/https://criteo-direct-bidder.prod.adgear.com/vAST/r=3380063&p=5523829&a=722314466677338112&size=640x360">
+            <button id="load-vast-btn">Load & Play VAST</button>
+
+        </div>
+
+        <div id="player-container">
+            <video id="ad-video-player" controls muted playsinline></video>
+        </div>
+
+        <div id="log-container">
+            <h2>Event Log</h2>
+            <pre id="log-output">Player ready. Enter a VAST URL and click "Load & Play VAST".</pre>
+        </div>
+    </div>
+
+    <script>
+        const vastUrlInput = document.getElementById('vast-url-input');
+        const loadVastBtn = document.getElementById('load-vast-btn');
+        const videoPlayer = document.getElementById('ad-video-player');
+        const logOutput = document.getElementById('log-output');
+
+        let trackingEvents = {};
+        let firedEvents = {};
+
+        // --- Logger Function ---
+        function log(message) {
+            console.log(message);
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `\n[${timestamp}] ${message}`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        // --- Utility to fire tracking pixels ---
+        function fireTrackingPixel(url) {
+            if (!url) return;
+            log(`Firing pixel: ${url.substring(0, 100)}...`);
+            const img = new Image();
+            img.src = url;
+        }
+
+        // --- Main VAST Loading and Parsing Logic ---
+        async function loadVastAd() {
+            const vastUrl = vastUrlInput.value.trim();
+            if (!vastUrl) {
+                alert("Please enter a VAST URL.");
+                return;
+            }
+
+            log(`Fetching VAST from: ${vastUrl}`);
+            
+            // Reset state
+            videoPlayer.src = '';
+            trackingEvents = {};
+            firedEvents = {};
+            logOutput.innerHTML = `Fetching VAST from: ${vastUrl}`;
+
+
+            try {
+                const response = await fetch(vastUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const vastXmlString = await response.text();
+                log("VAST XML fetched successfully.");
+                parseVast(vastXmlString);
+
+            } catch (error) {
+                log(`ERROR fetching or parsing VAST: ${error.message}`);
+                log("This might be a CORS issue. Try using a CORS proxy.");
+            }
+        }
+        
+        function parseVast(xmlString) {
+            log("Parsing VAST XML...");
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+
+            const parserError = xmlDoc.querySelector("parsererror");
+            if (parserError) {
+                log("Error parsing XML.");
+                console.error(parserError);
+                return;
+            }
+            
+            // NOTE: This is a simplified parser. It doesn't handle VAST Wrappers.
+            // It looks for the first InLine Ad and the first MP4 MediaFile.
+
+            // 1. Get Impression URL
+            const impressionNode = xmlDoc.querySelector('Impression');
+            if (impressionNode) {
+                fireTrackingPixel(impressionNode.textContent.trim());
+                log("Impression event fired.");
+            }
+
+            // 2. Get MediaFile (Video URL)
+            // We'll prefer MP4 files.
+            const mediaFileNode = xmlDoc.querySelector('MediaFile[type="video/mp4"]');
+            if (!mediaFileNode) {
+                log("ERROR: No MP4 MediaFile found in VAST response.");
+                return;
+            }
+            const mediaUrl = mediaFileNode.textContent.trim();
+            log(`Found MediaFile: ${mediaUrl}`);
+            
+            // 3. Get Tracking Events
+            const trackingNodes = xmlDoc.querySelectorAll('TrackingEvents Tracking');
+            trackingNodes.forEach(node => {
+                const eventName = node.getAttribute('event');
+                const url = node.textContent.trim();
+                if (eventName && url) {
+                    if (!trackingEvents[eventName]) {
+                        trackingEvents[eventName] = [];
+                    }
+                    trackingEvents[eventName].push(url);
+                }
+            });
+            log(`Found tracking events: ${Object.keys(trackingEvents).join(', ')}`);
+
+            // 4. Setup and play the video
+            setupPlayer(mediaUrl);
+        }
+
+        function setupPlayer(videoUrl) {
+            videoPlayer.src = videoUrl;
+            addPlayerEventListeners();
+            videoPlayer.play().catch(e => {
+                log("Autoplay was blocked. User must interact to play.");
+            });
+        }
+        
+        // --- Video Player Event Listeners ---
+        function addPlayerEventListeners() {
+            videoPlayer.addEventListener('play', () => {
+                // 'start' is usually fired on first play, 'resume' on subsequent plays
+                const eventName = videoPlayer.currentTime > 0 ? 'resume' : 'start';
+                 if (!firedEvents[eventName]) {
+                    (trackingEvents[eventName] || []).forEach(fireTrackingPixel);
+                    firedEvents[eventName] = true;
+                    if (eventName === 'start') firedEvents['resume'] = true; // Prevent resume from firing on start
+                 }
+            });
+
+            videoPlayer.addEventListener('pause', () => {
+                if (!videoPlayer.ended) {
+                    (trackingEvents['pause'] || []).forEach(fireTrackingPixel);
+                }
+            });
+            
+            videoPlayer.addEventListener('ended', () => {
+                (trackingEvents['complete'] || []).forEach(fireTrackingPixel);
+                firedEvents['complete'] = true;
+            });
+            
+            videoPlayer.addEventListener('volumechange', () => {
+                const eventName = videoPlayer.muted || videoPlayer.volume === 0 ? 'mute' : 'unmute';
+                 // To prevent firing mute/unmute on every tiny volume change, we just fire it once
+                 if (!firedEvents[eventName]) {
+                    (trackingEvents[eventName] || []).forEach(fireTrackingPixel);
+                    firedEvents['mute'] = (eventName === 'mute');
+                    firedEvents['unmute'] = (eventName === 'unmute');
+                 }
+            });
+
+            videoPlayer.addEventListener('timeupdate', () => {
+                const duration = videoPlayer.duration;
+                const currentTime = videoPlayer.currentTime;
+                if (!duration) return;
+
+                const progress = (currentTime / duration) * 100;
+                
+                if (progress >= 25 && !firedEvents.firstQuartile) {
+                    (trackingEvents.firstQuartile || []).forEach(fireTrackingPixel);
+                    firedEvents.firstQuartile = true;
+                }
+                if (progress >= 50 && !firedEvents.midpoint) {
+                    (trackingEvents.midpoint || []).forEach(fireTrackingPixel);
+                    firedEvents.midpoint = true;
+                }
+                if (progress >= 75 && !firedEvents.thirdQuartile) {
+                    (trackingEvents.thirdQuartile || []).forEach(fireTrackingPixel);
+                    firedEvents.thirdQuartile = true;
+                }
+            });
+        }
+
+        // --- Attach Initial Event Listener ---
+        loadVastBtn.addEventListener('click', loadVastAd);
+
+    </script>
+</body>
+</html>
