@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced VAST & OMID Player</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; background-color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px; }
+        h1 { text-align: center; color: #444; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        #vast-url-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        #load-vast-btn { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }
+        #load-vast-btn:hover { background-color: #0056b3; }
+        #player-container { position: relative; width: 100%; max-width: 640px; margin: 20px auto; background-color: #000; }
+        #ad-video-player { width: 100%; height: auto; display: block; }
+        #log-container { margin-top: 20px; }
+        h2 { border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 18px; }
+        #log-output { background-color: #2d2d2d; color: #9f9; padding: 15px; border-radius: 4px; font-family: "Courier New", Courier, monospace; font-size: 12px; height: 300px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+
+    <!-- OMID Step 1: Load the OMID service script and session client -->
+    <!-- These scripts must be loaded before our player logic runs. -->
+    <script src="https://static.criteo.net/banners/js/omidjs/stable/omweb-v1.js"></script>
+    <script src="https://static.criteo.net/banners/js/omidjs/stable/omid-session-client-v1.js"></script>
+
+</head>
+<body>
+
+    <div class="container">
+        <h1>Advanced VAST & OMID Player</h1>
+        
+        <div class="input-group">
+            <input type="text" id="vast-url-input" placeholder="Enter VAST Tag XML URL here..." value="https://rm-v.jp2.as.criteo.com/v?rm_e=DguW5zRxAos2q7G4bRMT_PkBCIV07MmiZNjKqK6NMe3lJMKDrzVBdWgndzlnhlR-qKLrVc81fE3Q3rrZVBecrsPCb5pn0FCRrY_oe-mwzymnuRJpO4Jhz3v_4_cMJmUWi0tBHJi4ikb3UyFNIjQP8rkNkPikcOJLh-e_iJJSoLXSavMjKt5OX8WWFE_lYXpJ11t77bwM2Zei6C7rpbc3zEF9Axadox4mPSmDI7szUrCf-gIA7KcrAmesAjGsgZD2Xr1sRMHcQYC5a9PKnnBS3DdP1CkuWgwPQAiCuCk4EdI3Oulc2bi8LJVkMdKub2WGzeVxR1_uKcTheWLekWxTRInakfrLEU5LaKTyryfprL8bXrSNtPEsl783PYA1CcVSyLlXW-6kzlKAlzrlcIOV5HEJ9UpOMA-coNQnC4VODj1wUii6WR3aegacd8SEwh9yj5oBAKIRWAQfkpTn08cPCSh43LkDVhQqiql2ZQoXQ0zUah80dggxKDDFj5IWybxAsJ_aaRL4f-Dz-a5I8e-K_aaVyEJeB-Vr3vYyiN2hW4vI0MlLlEi_Bz90EX53u8gCA0syNmCoysw6LtYTKW5yYORkQnBaSeJbo777KWjJhiR5n81YYXL4e15PynE737CiOnQqE2T9yO83eD3u_1Vj9XAYo3ydCp7nKDSZkQyRoIt91qXEUylnI17irweMNMYsA3VH1QVl3nFuehuxDhfvCKn3BYVjAd85lCF_U5risn8gdwcQv2kAHZplp7t_VMj9mm2Ujj8AdsOQx4T5r6gwTnBLSnkMeAwNOv4S4CtESSc&ev=4">
+            <button id="load-vast-btn">Load & Play VAST</button>
+        </div>
+
+        <div id="player-container">
+            <video id="ad-video-player" muted playsinline></video>
+        </div>
+
+        <div id="log-container">
+            <h2>Event Log</h2>
+            <pre id="log-output">Player ready. Click "Load & Play VAST" to start.</pre>
+        </div>
+    </div>
+
+    <script>
+        const vastUrlInput = document.getElementById('vast-url-input');
+        const loadVastBtn = document.getElementById('load-vast-btn');
+        const videoPlayer = document.getElementById('ad-video-player');
+        const logOutput = document.getElementById('log-output');
+
+        let trackingEvents = {};
+        let firedEvents = {};
+        let omidVerificationResources = [];
+        let omidState = {}; // To hold all OMID related objects
+
+        // --- Logger Function ---
+        function log(message) {
+            console.log(message);
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.innerHTML += `\n[${timestamp}] ${message}`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        // --- Utility to fire tracking pixels ---
+        function fireTrackingPixel(url) {
+            if (!url) return;
+            log(`VAST Pixel: Firing ${url.substring(0, 80)}...`);
+            const img = new Image();
+            img.src = url;
+        }
+
+        // --- Main VAST Loading and Parsing Logic ---
+        async function loadVastAd() {
+            const vastUrl = vastUrlInput.value.trim();
+            if (!vastUrl) {
+                alert("Please enter a VAST URL.");
+                return;
+            }
+            
+            // --- Reset state for new Ad ---
+            log(`Fetching VAST from: ${vastUrl.substring(0,100)}...`);
+            videoPlayer.src = '';
+            trackingEvents = {};
+            firedEvents = {};
+            omidVerificationResources = [];
+            if (omidState.adSession) {
+                log("OMID: Finishing previous session.");
+                omidState.adSession.finish();
+            }
+            omidState = {};
+            logOutput.innerHTML = `Fetching VAST from: ${vastUrl.substring(0,100)}...`;
+
+
+            try {
+                // Using a CORS proxy for demonstration to avoid browser security issues
+                const proxyUrl = `https://cors-anywhere.herokuapp.com/${vastUrl}`;
+                log("Using CORS proxy for request. This may be slow.");
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const vastXmlString = await response.text();
+                log("VAST XML fetched successfully.");
+                parseVast(vastXmlString);
+
+            } catch (error) {
+                log(`ERROR fetching VAST: ${error.message}`);
+                log("CORS issues are common. The request was proxied, but may have failed. Check browser console.");
+            }
+        }
+        
+        function parseVast(xmlString) {
+            log("Parsing VAST XML...");
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+
+            const parserError = xmlDoc.querySelector("parsererror");
+            if (parserError) {
+                log("Error parsing XML.");
+                console.error(parserError);
+                return;
+            }
+            
+            // --- 1. Get Impression URL ---
+            const impressionNode = xmlDoc.querySelector('Impression');
+            if (impressionNode) {
+                // Fire impression immediately as per VAST spec
+                fireTrackingPixel(impressionNode.textContent.trim());
+            }
+
+            // --- 2. Get MediaFile (Video URL) ---
+            const mediaFileNode = xmlDoc.querySelector('MediaFile[type="video/mp4"]');
+            if (!mediaFileNode) {
+                log("ERROR: No MP4 MediaFile found in VAST response.");
+                return;
+            }
+            const mediaUrl = mediaFileNode.textContent.trim();
+            log(`Found MediaFile: ${mediaUrl.substring(0, 100)}...`);
+            
+            // --- 3. Get VAST Tracking Events ---
+            const trackingNodes = xmlDoc.querySelectorAll('TrackingEvents Tracking');
+            trackingNodes.forEach(node => {
+                const eventName = node.getAttribute('event');
+                const url = node.textContent.trim();
+                if (eventName && url) {
+                    if (!trackingEvents[eventName]) trackingEvents[eventName] = [];
+                    trackingEvents[eventName].push(url);
+                }
+            });
+            log(`Found VAST events: ${Object.keys(trackingEvents).join(', ')}`);
+
+            // --- 4. Get OMID AdVerifications ---
+            const adVerificationsNode = xmlDoc.querySelector('AdVerifications');
+            if (adVerificationsNode) {
+                log("Found <AdVerifications> block for OMID.");
+                const verificationNodes = adVerificationsNode.querySelectorAll('Verification');
+                verificationNodes.forEach(node => {
+                    const resourceNode = node.querySelector('JavaScriptResource');
+                    const paramsNode = node.querySelector('VerificationParameters');
+                    if (resourceNode) {
+                        omidVerificationResources.push({
+                            vendorKey: node.getAttribute('vendor') || 'unknown',
+                            scriptUrl: resourceNode.textContent.trim(),
+                            parameters: paramsNode ? paramsNode.textContent.trim() : null,
+                        });
+                    }
+                });
+                log(`Found ${omidVerificationResources.length} OMID verification script(s).`);
+            } else {
+                log("OMID: No <AdVerifications> block found. Viewability will not be tracked.");
+            }
+
+            // --- 5. Setup and play the video ---
+            setupPlayer(mediaUrl);
+        }
+        
+        function initializeOmidSession() {
+            if (omidVerificationResources.length === 0) {
+                log("OMID: Skipping initialization as no verification scripts were found.");
+                return;
+            }
+            if (typeof omidSessionClient === 'undefined') {
+                 log("OMID ERROR: omid-session-client-v1.js is not loaded.");
+                 return;
+            }
+            log("OMID: Initializing Ad Session...");
+            try {
+                // --- OMID Step 2: Extract necessary classes
+                const { AdSession, Context, Partner, VerificationScriptResource, AdEvents, MediaEvents, VastProperties } = omidSessionClient;
+
+                // --- OMID Step 3: Create Partner and Context
+                const partner = new Partner('Criteo', '1.0');
+                
+                const resources = omidVerificationResources.map(res => {
+                    return new VerificationScriptResource(res.scriptUrl, res.vendorKey, res.parameters, 'full');
+                });
+                log(`OMID: Created ${resources.length} verification script resources.`);
+
+                const context = new Context(partner, resources, window.location.href);
+                context.setVideoElement(videoPlayer); // Associate with our video player
+                context.setServiceWindow(window.top);
+
+                // --- OMID Step 4: Start a session
+                omidState.adSession = new AdSession(context);
+                omidState.adSession.setCreativeType('video');
+                omidState.adSession.setImpressionType('beginToRender');
+
+                omidState.adEvents = new AdEvents(omidState.adSession);
+                omidState.mediaEvents = new MediaEvents(omidState.adSession);
+
+                omidState.adSession.registerSessionObserver(event => {
+                    log(`OMID Session Event: ${event.type}`);
+                    if (event.type === 'sessionStart') {
+                        // This indicates the session is active and measurement can begin.
+                        // Fire loaded and impression events to signal the ad is ready.
+                        const vastProperties = new VastProperties(false, 0, true, 'standalone');
+                        omidState.adEvents.loaded(vastProperties);
+                        omidState.adEvents.impressionOccurred();
+                        log("OMID: Fired 'loaded' and 'impressionOccurred' events.");
+                    } else if (event.type === 'sessionError') {
+                        log(`OMID SESSION ERROR: ${event.data.message}`);
+                    }
+                });
+                
+                omidState.adSession.start();
+                log("OMID: Ad Session started.");
+
+            } catch (e) {
+                log(`OMID CRITICAL ERROR: ${e.message}`);
+                console.error(e);
+                omidState = {}; // Clear state on failure
+            }
+        }
+
+
+        function setupPlayer(videoUrl) {
+            videoPlayer.src = videoUrl;
+            initializeOmidSession(); // Initialize OMID before adding listeners
+            addPlayerEventListeners();
+            log("Attempting to play video...");
+            videoPlayer.play().catch(e => {
+                log("Autoplay was blocked. User must interact to play.");
+                // We still want controls to work
+                videoPlayer.controls = true;
+            });
+        }
+        
+        // --- Video Player Event Listeners ---
+        function addPlayerEventListeners() {
+            // Remove old listeners to prevent duplicates on re-load
+            videoPlayer.replaceWith(videoPlayer.cloneNode(true));
+            const newPlayer = document.getElementById('ad-video-player');
+            newPlayer.addEventListener('play', handlePlay);
+            newPlayer.addEventListener('pause', handlePause);
+            newPlayer.addEventListener('ended', handleEnded);
+            newPlayer.addEventListener('volumechange', handleVolumeChange);
+            newPlayer.addEventListener('timeupdate', handleTimeUpdate);
+            // OMID-specific buffering events
+            newPlayer.addEventListener('waiting', handleBufferStart);
+            newPlayer.addEventListener('playing', handleBufferFinish);
+        }
+
+        const handlePlay = () => {
+            const eventName = videoPlayer.currentTime > 0.1 ? 'resume' : 'start';
+            log(`Video event: ${eventName}`);
+
+            if (eventName === 'start' && !firedEvents.start) {
+                (trackingEvents.start || []).forEach(fireTrackingPixel);
+                if (omidState.mediaEvents) {
+                    log("OMID: Firing 'start' event.");
+                    omidState.mediaEvents.start(videoPlayer.duration, videoPlayer.volume);
+                }
+                firedEvents.start = true;
+            } else if (eventName === 'resume' && firedEvents.start) { // Only fire resume after start
+                (trackingEvents.resume || []).forEach(fireTrackingPixel);
+                 if (omidState.mediaEvents) {
+                    log("OMID: Firing 'resume' event.");
+                    omidState.mediaEvents.resume();
+                }
+            }
+        };
+
+        const handlePause = () => {
+            if (!videoPlayer.ended) {
+                log("Video event: pause");
+                (trackingEvents.pause || []).forEach(fireTrackingPixel);
+                 if (omidState.mediaEvents) {
+                    log("OMID: Firing 'pause' event.");
+                    omidState.mediaEvents.pause();
+                }
+            }
+        };
+
+        const handleEnded = () => {
+            log("Video event: complete");
+            (trackingEvents.complete || []).forEach(fireTrackingPixel);
+            if (omidState.mediaEvents) {
+                log("OMID: Firing 'complete' event.");
+                omidState.mediaEvents.complete();
+            }
+            firedEvents.complete = true;
+        };
+        
+        const handleVolumeChange = () => {
+            const isMuted = videoPlayer.muted || videoPlayer.volume === 0;
+            if (isMuted && !firedEvents.mute) {
+                log("Video event: mute");
+                (trackingEvents.mute || []).forEach(fireTrackingPixel);
+                firedEvents.mute = true;
+                firedEvents.unmute = false;
+            } else if (!isMuted && !firedEvents.unmute) {
+                log("Video event: unmute");
+                (trackingEvents.unmute || []).forEach(fireTrackingPixel);
+                firedEvents.unmute = true;
+                firedEvents.mute = false;
+            }
+             if (omidState.mediaEvents) {
+                // OMID just needs volume change, it determines mute state itself.
+                omidState.mediaEvents.volumeChange(videoPlayer.volume);
+             }
+        };
+
+        const handleTimeUpdate = () => {
+            const duration = videoPlayer.duration;
+            if (!duration) return;
+            const progress = (videoPlayer.currentTime / duration) * 100;
+            
+            if (progress >= 25 && !firedEvents.firstQuartile) {
+                log("Video event: firstQuartile");
+                (trackingEvents.firstQuartile || []).forEach(fireTrackingPixel);
+                if (omidState.mediaEvents) {
+                    log("OMID: Firing 'firstQuartile' event.");
+                    omidState.mediaEvents.firstQuartile();
+                }
+                firedEvents.firstQuartile = true;
+            }
+            if (progress >= 50 && !firedEvents.midpoint) {
+                log("Video event: midpoint");
+                (trackingEvents.midpoint || []).forEach(fireTrackingPixel);
+                if (omidState.mediaEvents) {
+                    log("OMID: Firing 'midpoint' event.");
+                    omidState.mediaEvents.midpoint();
+                }
+                firedEvents.midpoint = true;
+            }
+            if (progress >= 75 && !firedEvents.thirdQuartile) {
+                log("Video event: thirdQuartile");
+                (trackingEvents.thirdQuartile || []).forEach(fireTrackingPixel);
+                if (omidState.mediaEvents) {
+                    log("OMID: Firing 'thirdQuartile' event.");
+                    omidState.mediaEvents.thirdQuartile();
+                }
+                firedEvents.thirdQuartile = true;
+            }
+        };
+        
+        const handleBufferStart = () => {
+            log("Video event: buffering started");
+            if (omidState.mediaEvents) {
+                log("OMID: Firing 'bufferStart' event.");
+                omidState.mediaEvents.bufferStart();
+            }
+        };
+        const handleBufferFinish = () => {
+            log("Video event: buffering finished");
+            if (omidState.mediaEvents) {
+                log("OMID: Firing 'bufferFinish' event.");
+                omidState.mediaEvents.bufferFinish();
+            }
+        };
+
+        // --- Attach Initial Event Listeners ---
+        loadVastBtn.addEventListener('click', loadVastAd);
+
+        // Auto-load on page start for convenience
+        window.addEventListener('load', () => {
+            if (vastUrlInput.value) {
+                loadVastAd();
+            }
+        });
+    </script>
+</body>
+</html>
