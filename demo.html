@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeStyle Tech - Premium Electronics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .main-showcase {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 50px;
+        }
+
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .video-section {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .video-overlay h3 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .video-overlay p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .products-section {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .product-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.3);
+        }
+
+        .product-image {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .product-specs {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .product-save {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .stars {
+            color: #ffd700;
+        }
+
+        .rating-count {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .more-products {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .more-products h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 2rem;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .simple-product {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .simple-product:hover {
+            transform: scale(1.03);
+        }
+
+        .simple-product .product-emoji {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .showcase-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>LifeStyle Tech</h1>
+            <p>Premium Electronics for Your Digital Lifestyle</p>
+        </header>
+
+        <div class="main-showcase">
+            <div class="showcase-grid">
+                <div class="video-section">
+                    <div class="video-container">
+                        <video id="mainVideo" autoplay muted loop>
+                            <source src="https://static.criteo.net/design/dt/commerce_max/retailer_1380/d774bbe351764eb88bd0eedbc57571f2_generated_file_august_06-_2025_-_12_36pm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="video-overlay">
+                            <h3>🐱 Life's Sweet Moments</h3>
+                            <p>Capture every perfect day</p>
+                        </div>
+                        <div class="video-controls">
+                            <button class="control-btn" onclick="togglePlay()">
+                                <span id="playIcon">⏸️</span>
+                            </button>
+                            <button class="control-btn" onclick="toggleMute()">
+                                <span id="muteIcon">🔇</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="products-section">
+                    <div class="product-card" onclick="selectProduct('galaxy-a14')">
+                        <div class="product-image">📱</div>
+                        <div class="product-info">
+                            <div class="product-name">SAMSUNG Galaxy A14 - 64GB Green</div>
+                            <div class="product-specs">6.6" Display • Dual Camera • Android 13</div>
+                            <div class="product-price">£149.00</div>
+                            <div class="product-save">Save £50.00</div>
+                            <div class="rating">
+                                <span class="stars">★★★★☆</span>
+                                <span class="rating-count">(106)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="product-card" onclick="selectProduct('galaxy-s23')">
+                        <div class="product-image">📱</div>
+                        <div class="product-info">
+                            <div class="product-name">SAMSUNG Galaxy S23 - 256GB Lavender</div>
+                            <div class="product-specs">6.1" AMOLED • Triple Camera • 5G</div>
+                            <div class="product-price">£899.00</div>
+                            <div class="rating">
+                                <span class="stars">★★★★★</span>
+                                <span class="rating-count">(156)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="more-products">
+            <h2>More Amazing Products</h2>
+            <div class="product-grid">
+                <div class="simple-product">
+                    <div class="product-emoji">💻</div>
+                    <h3>MacBook Pro</h3>
+                    <p>From £1,299.00</p>
+                    <div class="controls">
+                        <button class="btn">View Details</button>
+                        <button class="btn">Add to Cart</button>
+                    </div>
+                </div>
+                
+                <div class="simple-product">
+                    <div class="product-emoji">🎧</div>
+                    <h3>AirPods Pro</h3>
+                    <p>From £249.00</p>
+                    <div class="controls">
+                        <button class="btn">View Details</button>
+                        <button class="btn">Add to Cart</button>
+                    </div>
+                </div>
+                
+                <div class="simple-product">
+                    <div class="product-emoji">⌚</div>
+                    <h3>Apple Watch</h3>
+                    <p>From £399.00</p>
+                    <div class="controls">
+                        <button class="btn">View Details</button>
+                        <button class="btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedProduct = null;
+
+        function togglePlay() {
+            const video = document.getElementById('mainVideo');
+            const playIcon = document.getElementById('playIcon');
+            
+            if (video.paused) {
+                video.play();
+                playIcon.textContent = '⏸️';
+            } else {
+                video.pause();
+                playIcon.textContent = '▶️';
+            }
+        }
+
+        function toggleMute() {
+            const video = document.getElementById('mainVideo');
+            const muteIcon = document.getElementById('muteIcon');
+            
+            if (video.muted) {
+                video.muted = false;
+                muteIcon.textContent = '🔊';
+            } else {
+                video.muted = true;
+                muteIcon.textContent = '🔇';
+            }
+        }
+
+        function selectProduct(productId) {
+            selectedProduct = productId;
+            
+            // Add visual feedback
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                card.style.transform = '';
+                card.style.boxShadow = '';
+            });
+            
+            const selectedCard = event.currentTarget;
+            selectedCard.style.transform = 'translateY(-8px) scale(1.02)';
+            selectedCard.style.boxShadow = '0 30px 60px rgba(102, 126, 234, 0.4)';
+            
+            // Show selection feedback
+            setTimeout(() => {
+                alert(`Selected: ${selectedCard.querySelector('.product-name').textContent}`);
+            }, 200);
+        }
+
+        // Add some interactive animations on load
+        window.addEventListener('load', () => {
+            const cards = document.querySelectorAll('.product-card, .simple-product');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

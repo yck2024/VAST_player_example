@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeStyle Tech - Premium Electronics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 2px solid #e1e8ed;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 400px;
+        }
+
+        .video-section {
+            position: relative;
+            background: #000;
+            border-right: 2px solid #e1e8ed;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(100, 100, 100, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .video-overlay .icon {
+            width: 20px;
+            height: 20px;
+            background: #666;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .video-overlay .text {
+            font-size: 13px;
+            line-height: 1.3;
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            font-size: 16px;
+        }
+
+        .control-btn:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+
+        .products-section {
+            position: relative;
+            background: white;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .products-slider {
+            display: flex;
+            transition: transform 0.4s ease;
+            width: 100%;
+        }
+
+        .product-slide {
+            min-width: 100%;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .product-image {
+            width: 120px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .product-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .phone-mockup {
+            width: 80px;
+            height: 120px;
+            border-radius: 12px;
+            border: 3px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            font-size: 24px;
+            position: relative;
+        }
+
+        .phone-mockup.green {
+            background: linear-gradient(135deg, #a8e6cf, #88d8a3);
+        }
+
+        .phone-mockup.purple {
+            background: linear-gradient(135deg, #d1a3ff, #b19cd9);
+        }
+
+        .phone-mockup::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+        }
+
+        .product-details {
+            flex: 1;
+        }
+
+        .product-brand {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .product-save {
+            font-size: 14px;
+            color: #e74c3c;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stars {
+            color: #ffc107;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
+        .rating-count {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #e74c3c;
+            background: white;
+            color: #e74c3c;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .nav-arrow:hover {
+            background: #e74c3c;
+            color: white;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-arrow.prev {
+            left: 15px;
+        }
+
+        .nav-arrow.next {
+            right: 15px;
+        }
+
+        .nav-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #ccc;
+            color: #ccc;
+        }
+
+        .nav-arrow:disabled:hover {
+            background: white;
+            color: #ccc;
+            transform: translateY(-50%);
+        }
+
+        .dots-indicator {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ddd;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: #e74c3c;
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .video-section {
+                border-right: none;
+                border-bottom: 2px solid #e1e8ed;
+            }
+            
+            .product-slide {
+                padding: 20px;
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .product-image {
+                width: 100px;
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <div class="content-wrapper">
+                <div class="video-section">
+                    <div class="video-container">
+                        <video id="mainVideo" autoplay muted loop crossorigin="anonymous">
+                            <source src="https://static.criteo.net/design/dt/commerce_max/retailer_1380/d774bbe351764eb88bd0eedbc57571f2_generated_file_august_06-_2025_-_12_36pm.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="video-overlay">
+                            <div class="icon">ℹ️</div>
+                            <div class="text">
+                                 Commerce Spotlight Video - DEMO
+                            </div>
+                        </div>
+                        <div class="video-controls">
+                            <button class="control-btn" onclick="togglePlay()" title="Play/Pause">
+                                <span id="playIcon">⏸️</span>
+                            </button>
+                            <button class="control-btn" onclick="toggleMute()" title="Mute/Unmute">
+                                <span id="muteIcon">🔇</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="products-section">
+                    <div class="products-slider" id="productsSlider">
+                        <div class="product-slide">
+                            <div class="product-image">
+                                <div class="phone-mockup green">📱</div>
+                            </div>
+                            <div class="product-details">
+                                <div class="product-brand">SAMSUNG Galaxy A14 - 64</div>
+                                <div class="product-name">GB, Green</div>
+                                <div class="product-price">£149.00</div>
+                                <div class="product-save">Save £50.00</div>
+                                <div class="product-rating">
+                                    <span class="stars">★★★★☆</span>
+                                    <span class="rating-count">(106)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-slide">
+                            <div class="product-image">
+                                <div class="phone-mockup purple">📱</div>
+                            </div>
+                            <div class="product-details">
+                                <div class="product-brand">SAMSUNG Galaxy S23 - 256</div>
+                                <div class="product-name">GB, Lavender</div>
+                                <div class="product-price">£899.00</div>
+                                <div class="product-rating">
+                                    <span class="stars">★★★★★</span>
+                                    <span class="rating-count">(156)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-slide">
+                            <div class="product-image">
+                                <div class="phone-mockup">📱</div>
+                            </div>
+                            <div class="product-details">
+                                <div class="product-brand">SAMSUNG Galaxy A54 - 128</div>
+                                <div class="product-name">GB, Graphite</div>
+                                <div class="product-price">£349.00</div>
+                                <div class="product-save">Save £70.00</div>
+                                <div class="product-rating">
+                                    <span class="stars">★★★★☆</span>
+                                    <span class="rating-count">(89)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="nav-arrow prev" onclick="previousProduct()" id="prevBtn">‹</button>
+                    <button class="nav-arrow next" onclick="nextProduct()" id="nextBtn">›</button>
+
+                    <div class="dots-indicator">
+                        <div class="dot active" onclick="goToSlide(0)"></div>
+                        <div class="dot" onclick="goToSlide(1)"></div>
+                        <div class="dot" onclick="goToSlide(2)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const totalSlides = 3;
+        
+        function updateSlider() {
+            const slider = document.getElementById('productsSlider');
+            const transform = `translateX(-${currentSlide * 100}%)`;
+            slider.style.transform = transform;
+            
+            // Update dots
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+            
+            // Update arrow states
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+        }
+
+        function nextProduct() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlider();
+            }
+        }
+
+        function previousProduct() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlider();
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlider();
+        }
+
+        function togglePlay() {
+            const video = document.getElementById('mainVideo');
+            const playIcon = document.getElementById('playIcon');
+            
+            if (video.paused) {
+                video.play();
+                playIcon.textContent = '⏸️';
+            } else {
+                video.pause();
+                playIcon.textContent = '▶️';
+            }
+        }
+
+        function toggleMute() {
+            const video = document.getElementById('mainVideo');
+            const muteIcon = document.getElementById('muteIcon');
+            
+            if (video.muted) {
+                video.muted = false;
+                muteIcon.textContent = '🔊';
+            } else {
+                video.muted = true;
+                muteIcon.textContent = '🔇';
+            }
+        }
+
+        // Auto-advance slides every 8 seconds
+        let autoSlideInterval = setInterval(() => {
+            if (currentSlide < totalSlides - 1) {
+                nextProduct();
+            } else {
+                currentSlide = 0;
+                updateSlider();
+            }
+        }, 8000);
+
+        // Pause auto-advance on hover
+        const productsSection = document.querySelector('.products-section');
+        productsSection.addEventListener('mouseenter', () => {
+            clearInterval(autoSlideInterval);
+        });
+
+        productsSection.addEventListener('mouseleave', () => {
+            autoSlideInterval = setInterval(() => {
+                if (currentSlide < totalSlides - 1) {
+                    nextProduct();
+                } else {
+                    currentSlide = 0;
+                    updateSlider();
+                }
+            }, 8000);
+        });
+
+        // Initialize
+        updateSlider();
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                previousProduct();
+            } else if (e.key === 'ArrowRight') {
+                nextProduct();
+            }
+        });
+    </script>
+</body>
+</html>
